@@ -26,6 +26,6 @@ func SetupRoutes(app *fiber.App, userH handlers.UserHandlerInterface, smsH handl
 	// 2 express message
 	// 3 chack status of specific message
 	app.Post("/sms/:user_id/:service_id/express/send", smsH.SendExpressSms)
-	app.Post("/sms/:user_id/:service_id/business/send", smsH.SendExpressSms)
+	app.Post("/sms/:user_id/:service_id/indirect/send", smsH.SendExpressSms)
 
 }

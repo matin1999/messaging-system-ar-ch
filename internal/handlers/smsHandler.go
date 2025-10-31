@@ -1,11 +1,11 @@
 package handlers
 
 import (
-	"errors"
+	"log"
 	"postchi/internal/metrics"
+	"postchi/internal/sms"
 	"postchi/pkg/env"
 	"postchi/pkg/logger"
-
 	"github.com/gofiber/fiber/v2"
 )
 
@@ -28,5 +28,18 @@ func SmsHandlerInit(HandlerLogger logger.LoggerInterface, envs *env.Envs, metric
 }
 
 func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
-	return errors.New("test")
+	provider, err := sms.NewProvider(h.Envs,"kavenegar")
+	if err != nil {
+		log.Fatal(err)
+		h.Logger.StdLog("error",err.Error())
+	}
+
+	smsService := sms.NewService(provider)
+
+	messageId,messageStatus,messageErr := smsService.Send("+989123456789", "Hello from Go SMS Gateway!")
+	if messageErr != nil {
+		log.Println("Failed to send:", err)
+	} else {
+		log.Println("Message sent successfully!")
+	}
 }
