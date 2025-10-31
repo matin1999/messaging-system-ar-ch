@@ -3,16 +3,24 @@ package kafka
 import (
 	"context"
 	"errors"
-	"time"
 	"strings"
+	"time"
 
 	kafka "github.com/segmentio/kafka-go"
 )
 
-type Interface interface {
+type SmsKafkaMessage struct {
+	To        string `json:"to"`
+	Content   string `json:"content"`
+	Provider  string `json:"provider"`
+	UserId    string    `json:"user_id"`
+	ServiceId string    `json:"service_id"`
+}
+
+type KafkaInterface interface {
 	Publish(ctx context.Context, key string, value []byte) error
-	PublishJSON(ctx context.Context, key string, v any) error
 	ReadMessage(ctx context.Context) (*kafka.Message, error)
+	UseReader(groupID string) error
 	Close() error
 }
 
@@ -23,8 +31,7 @@ type Client struct {
 	reader  *kafka.Reader
 }
 
-
-func Init(brokers string, topic string) (*Client, error) {
+func Init(brokers string, topic string) (KafkaInterface, error) {
 	bs := splitBrokers(brokers)
 
 	c := &Client{
@@ -33,9 +40,9 @@ func Init(brokers string, topic string) (*Client, error) {
 		writer: &kafka.Writer{
 			Addr:         kafka.TCP(bs...),
 			Topic:        topic,
-			Balancer:     &kafka.Hash{},    
-			RequiredAcks: kafka.RequireOne,  
-			Async:        false,             
+			Balancer:     &kafka.Hash{},
+			RequiredAcks: kafka.RequireOne,
+			Async:        false,
 		},
 	}
 	return c, nil
@@ -49,8 +56,8 @@ func (c *Client) UseReader(groupID string) error {
 		Brokers:  c.brokers,
 		GroupID:  groupID,
 		Topic:    c.topic,
-		MinBytes: 1,            
-		MaxBytes: 1 << 20,      
+		MinBytes: 1,
+		MaxBytes: 1 << 20,
 		MaxWait:  time.Second,
 	})
 	return nil
@@ -79,7 +86,6 @@ func (c *Client) Publish(ctx context.Context, key string, value []byte) error {
 	})
 }
 
-
 func (c *Client) ReadMessage(ctx context.Context) (*kafka.Message, error) {
 	if c.reader == nil {
 		return nil, errors.New("kafka: reader not initialized; call UseReader(groupID)")
@@ -90,7 +96,6 @@ func (c *Client) ReadMessage(ctx context.Context) (*kafka.Message, error) {
 	}
 	return &m, nil
 }
-
 
 func splitBrokers(s string) []string {
 	parts := strings.Split(s, ",")
