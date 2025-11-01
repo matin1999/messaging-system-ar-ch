@@ -27,8 +27,8 @@ type SmsHandlerInterface interface {
 	SensAsyncSms(c *fiber.Ctx) error
 }
 
-func SmsHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics) SmsHandlerInterface {
-	return &SmsHandler{Envs: e, Logger: l, Metrics: m}
+func SmsHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics,k kafka.KafkaInterface) SmsHandlerInterface {
+	return &SmsHandler{Envs: e, Logger: l, Metrics: m,KafkaClient: k}
 }
 
 func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
