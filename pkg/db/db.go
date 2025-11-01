@@ -52,7 +52,7 @@ func Init(dsn string) (DataBaseInterface, error) {
 
 func (d *DataBaseWrapper) GetUserServices(userID uint) ([]Service, error) {
 	var svcs []Service
-	err := d.DBConn.Where("user_id = ?", userID).Find(&svcs).Error
+	err := d.DBConn.Model(&Service{}).Where("user_id = ?", userID).Find(&svcs).Error
 	return svcs, err
 }
 
