@@ -5,6 +5,7 @@ import (
 	"postchi/internal/handlers"
 	router "postchi/internal/routers"
 
+	"postchi/cmd/worker"
 	"postchi/internal/metrics"
 	"postchi/pkg/db"
 	"postchi/pkg/env"
@@ -28,7 +29,7 @@ func main() {
 	logger.StdLog("error", "[ar-0.0] postchi service started")
 	metric := metrics.InitMetrics()
 
-	kafkaClient, err := kafka.Init(envs.KAFKA_BROKERS, envs.KAFKA_TOPIC_SMS)
+	kafkaWriterClient, err := kafka.Init(envs.KAFKA_BROKERS, envs.KAFKA_TOPIC_SMS)
 	if err != nil {
 		logger.StdLog("error", fmt.Sprintf("[worker] kafka init failed: %v", err))
 		panic("worker cannot run kafka not initialized with err " + err.Error())
@@ -36,8 +37,8 @@ func main() {
 
 	DbClient, err := db.Init(envs.DB_DSN)
 	if err != nil {
-		logger.StdLog("error", fmt.Sprintf("[worker] kafka init failed: %v", err))
-		panic("worker cannot run kafka not initialized with err " + err.Error())
+		logger.StdLog("error", fmt.Sprintf("[main] db init failed: %v", err))
+		panic("mian cannot run db not initialized with err " + err.Error())
 	}
 
 	go func() {
@@ -49,8 +50,20 @@ func main() {
 		metrics.StartMetricsServer(envs.PROMETHEUS_PORT)
 	}()
 
+	kafkaReaderClient, err := kafka.Init(envs.KAFKA_BROKERS, envs.KAFKA_TOPIC_SMS)
+	if err != nil {
+		logger.StdLog("error", fmt.Sprintf("[worker] kafka init failed: %v", err))
+		panic("worker cannot run kafka not initialized with err " + err.Error())
+	}
+
+	worker := worker.WorkerHandlerInit(logger,&envs,metric,kafkaReaderClient)
+
+	//running workers 
+
+	go worker.Start()
+
 	userHandler := handlers.UserHandlerInit(logger, &envs, metric, DbClient)
-	smsHandler := handlers.SmsHandlerInit(logger, &envs, metric, kafkaClient,DbClient)
+	smsHandler := handlers.SmsHandlerInit(logger, &envs, metric, kafkaWriterClient, DbClient)
 
 	router.SetupRoutes(app, userHandler, smsHandler)
 
