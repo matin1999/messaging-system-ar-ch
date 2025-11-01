@@ -14,29 +14,26 @@ const (
 type SmsStatus string
 
 const (
-	SmsStatusCreated            SmsStatus = "created"
-	SmsStatusQueued             SmsStatus = "queued"
-	SmsStatusSent               SmsStatus = "sent"
-	SmsStatusDelivered          SmsStatus = "delivered"
-	SmsStatusFailed             SmsStatus = "failed"
-	SmsStatusInsufficientCharge SmsStatus = "insufficient_charge"
+	SmsStatusQueued    SmsStatus = "queued"
+	SmsStatusSent      SmsStatus = "sent"
+	SmsStatusDelivered SmsStatus = "delivered"
+	SmsStatusFailed    SmsStatus = "failed"
 )
 
 type User struct {
 	gorm.Model
-	UserName string    `gorm:"type:string;size:255;not null;"`
-	Password string    `gorm:"type:string;size:255;not null;"`
-	Services []Service `gorm:"foreignKey:UserId"`
+	Name   string `gorm:"type:varchar(128);not null;default:''"`
+	APIKey string `gorm:"type:varchar(128);uniqueIndex;not null;default:''"`
 }
 
 type Service struct {
 	gorm.Model
-	ServiceSenderNumber string `gorm:"type:string;size:255;not null;"`
-	Servicetype         string `gorm:"type:string;size:255;not null;"`
-	ChargeAmount        uint64 `gorm:"type:int;default:0"`
-	UsedChargeAmount    uint64 `gorm:"type:int;default:0"`
-	User                User   `gorm:"references:ID"`
-	Sms                 []Sms  `gorm:"foreignKey:ChannelDetectionId"`
+	UserID  uint        `gorm:"index;not null"`
+	Type    ServiceType `gorm:"type:enum('express','indirect');not null"`
+	Status  string      `gorm:"type:varchar(16);not null;default:'active'"`
+	Credits int64       `gorm:"not null;default:0"`
+	User    User        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Sms     []Sms       `gorm:"foreignKey:ChannelDetectionId"`
 }
 
 type Sms struct {

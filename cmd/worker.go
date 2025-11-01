@@ -19,13 +19,14 @@ import (
 )
 
 type Worker struct {
-	Envs    *env.Envs
-	Metrics *metrics.Metrics
-	Logger  logger.LoggerInterface
+	Envs        *env.Envs
+	Metrics     *metrics.Metrics
+	Logger      logger.LoggerInterface
+	KafkaClinet kafka.KafkaInterface
 }
 
-func SmsHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics) *Worker {
-	return &Worker{Envs: e, Logger: l, Metrics: m, KafkaClient: k}
+func WorkerHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics, k kafka.KafkaInterface) *Worker {
+	return &Worker{Envs: e, Logger: l, Metrics: m, KafkaClinet: k}
 }
 
 func (w *Worker) startWorker() {
@@ -49,9 +50,9 @@ func (w *Worker) startWorker() {
 	var wg sync.WaitGroup
 	for i := 0; i < workers; i++ {
 		wg.Add(1)
-		go workerLoop(i+1, jobs, &envs, log, &wg)
+		go w.workerLoop(i+1, jobs, &wg)
 	}
-	w.Logger.StdLog("info", fmt.Sprintf("[worker] started %d workers; listening on topic=%s group=%s", workers, topic, group))
+	w.Logger.StdLog("info", fmt.Sprintf("[worker] started %d workers; listening on topic=%s group=%s", workers, w.Envs.KAFKA_TOPIC_SMS, w.Envs.KAFKA_CONSUMER_GROUP))
 
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
@@ -73,10 +74,9 @@ func (w *Worker) startWorker() {
 			var j kafka.SmsKafkaMessage
 			if err := json.Unmarshal(msg.Value, &j); err != nil {
 				w.Logger.StdLog("error", fmt.Sprintf("[worker] json decode failed (offset=%d, key=%s): %v", msg.Offset, string(msg.Key), err))
-				continue // skip poison message (minimal worker: no DLQ here)
+				continue
 			}
 
-			// enqueue without blocking on shutdown
 			select {
 			case jobs <- j:
 			case <-ctx.Done():
@@ -92,27 +92,25 @@ func (w *Worker) startWorker() {
 	w.Logger.StdLog("info", "[worker] exit clean")
 }
 
-func (w *Worker) workerLoop(id int, jobs <-chan Job, envs *env.Envs, log logger.LoggerInterface, wg *sync.WaitGroup) {
+func (w *Worker) workerLoop(id int, jobs <-chan kafka.SmsKafkaMessage, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	for j := range jobs {
 		providerName := j.Provider
-		if providerName == "" {
-			providerName = envs.DEFAULT_SMS_PROVIDER
-		}
-		prov, err := sms.NewProvider(envs, providerName)
+
+		prov, err := sms.NewProvider(w.Envs, providerName)
 		if err != nil {
-			log.StdLog("error", fmt.Sprintf("[worker:%d] init provider(%s) failed: %v", id, providerName, err))
+			w.Logger.StdLog("error", fmt.Sprintf("[worker:%d] init provider(%s) failed: %v", id, providerName, err))
 			continue
 		}
 		svc := sms.NewService(prov)
 
 		start := time.Now()
-		status, msgID, sendErr := svc.Send(j.To, j.Text)
+		status, msgID, sendErr := svc.Send(j.To, j.Content)
 		elapsed := time.Since(start)
 
 		if sendErr != nil {
-			log.StdLog("error", fmt.Sprintf("[worker:%d] send fail to=%s provider=%s err=%v elapsed=%s",
+			w.Logger.StdLog("error", fmt.Sprintf("[worker:%d] send fail to=%s provider=%s err=%v elapsed=%s",
 				id, j.To, prov.GetName(), sendErr, elapsed))
 			continue
 		}
