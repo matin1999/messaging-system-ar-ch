@@ -50,7 +50,7 @@ func main() {
 	}()
 
 	userHandler := handlers.UserHandlerInit(logger, &envs, metric, DbClient)
-	smsHandler := handlers.SmsHandlerInit(logger, &envs, metric, kafkaClient)
+	smsHandler := handlers.SmsHandlerInit(logger, &envs, metric, kafkaClient,DbClient)
 
 	router.SetupRoutes(app, userHandler, smsHandler)
 

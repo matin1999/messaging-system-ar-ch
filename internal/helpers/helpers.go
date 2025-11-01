@@ -12,9 +12,6 @@ import (
 
 func ParseUintParam(c *fiber.Ctx, name string) (uint, error) {
 	raw := c.Params(name)
-	if raw == "" {
-		return 0, fmt.Errorf("missing %s", name)
-	}
 	n, err := strconv.ParseUint(raw, 10, 64)
 	if err != nil {
 		return 0, fmt.Errorf("invalid %s", name)

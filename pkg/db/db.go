@@ -13,7 +13,8 @@ type DataBaseInterface interface {
 	DB() *gorm.DB
 	CreateUser(name string, password string) error
 	GetUserServices(userID uint) ([]Service, error)
-	CreateUserService(userID uint, typ ServiceType) (*Service, error)
+	CreateUserService(userID uint, ServiceType ServiceType, intialCredit int) error
+	UpdateServiceCredit(userId uint, serviceId uint, creditAmount int) error
 }
 
 type DataBaseWrapper struct {
@@ -55,14 +56,14 @@ func (d *DataBaseWrapper) GetUserServices(userID uint) ([]Service, error) {
 	return svcs, err
 }
 
-func (d *DataBaseWrapper) CreateUserService(userID uint, typ ServiceType) (*Service, error) {
+func (d *DataBaseWrapper) CreateUserService(userID uint, serviceType ServiceType, intialCredit int) error {
 	s := &Service{
 		UserID:  userID,
-		Type:    typ,
+		Type:    serviceType,
 		Status:  "active",
-		Credits: 0,
+		Credits: uint64(intialCredit),
 	}
-	return s, d.DBConn.Create(s).Error
+	return d.DBConn.Create(s).Error
 }
 
 func (d *DataBaseWrapper) CreateUser(name string, password string) error {
@@ -70,5 +71,18 @@ func (d *DataBaseWrapper) CreateUser(name string, password string) error {
 	if err != nil {
 		return err
 	}
+	u := &User{
+		Name:     name,
+		Password: string(bytes),
+	}
+	return d.DBConn.Create(u).Error
 
+}
+
+func (d *DataBaseWrapper) UpdateServiceCredit(userId uint, serviceId uint, creditAmount int) error {
+	result := d.DBConn.Model(&Service{}).Where("id = ?", serviceId).Update("credits", creditAmount)
+	if result.Error != nil {
+		return result.Error
+	}
+	return nil
 }

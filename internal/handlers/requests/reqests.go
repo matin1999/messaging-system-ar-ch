@@ -14,8 +14,8 @@ type CreateUserReq struct {
 
 type CreateServiceReq struct {
 	Type         string `json:"type"`           
-	InitialCharge int64  `json:"initial_charge"` }
+	InitialCredit int64  `json:"initial_credit"` }
 
 type ChargeReq struct {
-	ChargeAmount int64 `json:"charge_amount"` 
+	CreditAmount int64 `json:"credit_amount"` 
 }
