@@ -4,13 +4,14 @@ import (
 	"errors"
 	"time"
 
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
 
 type DataBaseInterface interface {
 	DB() *gorm.DB
-
+	CreateUser(name string, password string) error
 	GetUserServices(userID uint) ([]Service, error)
 	CreateUserService(userID uint, typ ServiceType) (*Service, error)
 }
@@ -19,8 +20,7 @@ type DataBaseWrapper struct {
 	DBConn *gorm.DB
 }
 
-func (w *DataBaseWrapper) DB() *gorm.DB { return w.DBConn }
-
+func (d *DataBaseWrapper) DB() *gorm.DB { return d.DBConn }
 
 func Init(dsn string) (DataBaseInterface, error) {
 	if dsn == "" {
@@ -49,19 +49,26 @@ func Init(dsn string) (DataBaseInterface, error) {
 	return &DataBaseWrapper{DBConn: db}, nil
 }
 
-
-func (w *DataBaseWrapper) GetUserServices(userID uint) ([]Service, error) {
+func (d *DataBaseWrapper) GetUserServices(userID uint) ([]Service, error) {
 	var svcs []Service
-	err := w.DBConn.Where("user_id = ?", userID).Find(&svcs).Error
+	err := d.DBConn.Where("user_id = ?", userID).Find(&svcs).Error
 	return svcs, err
 }
 
-func (w *DataBaseWrapper) CreateUserService(userID uint, typ ServiceType) (*Service, error) {
+func (d *DataBaseWrapper) CreateUserService(userID uint, typ ServiceType) (*Service, error) {
 	s := &Service{
 		UserID:  userID,
 		Type:    typ,
 		Status:  "active",
 		Credits: 0,
 	}
-	return s, w.DBConn.Create(s).Error
+	return s, d.DBConn.Create(s).Error
+}
+
+func (d *DataBaseWrapper) CreateUser(name string, password string) error {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+
 }

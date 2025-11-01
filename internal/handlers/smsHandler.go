@@ -7,6 +7,7 @@ import (
 	"postchi/internal/handlers/responses"
 	"postchi/internal/metrics"
 	"postchi/internal/sms"
+	"postchi/pkg/db"
 	"postchi/pkg/env"
 	"postchi/pkg/kafka"
 	"postchi/pkg/logger"
@@ -20,6 +21,7 @@ type SmsHandler struct {
 	Metrics     *metrics.Metrics
 	Logger      logger.LoggerInterface
 	KafkaClient kafka.KafkaInterface
+	Db          db.DataBaseInterface
 }
 
 type SmsHandlerInterface interface {
@@ -27,8 +29,8 @@ type SmsHandlerInterface interface {
 	SensAsyncSms(c *fiber.Ctx) error
 }
 
-func SmsHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics,k kafka.KafkaInterface) SmsHandlerInterface {
-	return &SmsHandler{Envs: e, Logger: l, Metrics: m,KafkaClient: k}
+func SmsHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics, k kafka.KafkaInterface, d db.DataBaseInterface) SmsHandlerInterface {
+	return &SmsHandler{Envs: e, Logger: l, Metrics: m, KafkaClient: k,Db: d}
 }
 
 func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
@@ -87,7 +89,6 @@ func (h *SmsHandler) SensAsyncSms(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "'to' and 'text' are required"})
 	}
 
-
 	kafkaValue, parseErr := json.Marshal(kafka.SmsKafkaMessage{To: req.To, Content: req.Text, UserId: userId, ServiceId: serviceId})
 	if parseErr != nil {
 		h.Logger.StdLog("error", fmt.Sprintf("[ar-12] kafka message parser erro %s", parseErr))
@@ -101,7 +102,7 @@ func (h *SmsHandler) SensAsyncSms(c *fiber.Ctx) error {
 
 	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"status": "queued",
-		"topic":  "sms_send", 
+		"topic":  "sms_send",
 		"to":     req.To,
 	})
 }

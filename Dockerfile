@@ -3,12 +3,12 @@ WORKDIR /src
 COPY go.mod ./
 RUN go mod download
 COPY . .
-RUN go build -o /out/api     ./main.go && \
-    go build -o /out/seeder  ./cmd/seeder/main.go
+RUN  go build   /main ./main
+
 FROM alpine:3.20
 
+
 COPY --from=build /main /app/main
-COPY --from=build /seeder /app/seeder
 
 
 

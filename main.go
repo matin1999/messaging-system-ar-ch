@@ -6,6 +6,7 @@ import (
 	router "postchi/internal/routers"
 
 	"postchi/internal/metrics"
+	"postchi/pkg/db"
 	"postchi/pkg/env"
 	"postchi/pkg/kafka"
 	"postchi/pkg/logger"
@@ -33,6 +34,12 @@ func main() {
 		panic("worker cannot run kafka not initialized with err " + err.Error())
 	}
 
+	DbClient, err := db.Init(envs.DB_DSN)
+	if err != nil {
+		logger.StdLog("error", fmt.Sprintf("[worker] kafka init failed: %v", err))
+		panic("worker cannot run kafka not initialized with err " + err.Error())
+	}
+
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
@@ -42,7 +49,7 @@ func main() {
 		metrics.StartMetricsServer(envs.PROMETHEUS_PORT)
 	}()
 
-	userHandler := handlers.UserHandlerInit(logger, &envs, metric)
+	userHandler := handlers.UserHandlerInit(logger, &envs, metric, DbClient)
 	smsHandler := handlers.SmsHandlerInit(logger, &envs, metric, kafkaClient)
 
 	router.SetupRoutes(app, userHandler, smsHandler)

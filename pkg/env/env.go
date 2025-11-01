@@ -16,6 +16,7 @@ type Envs struct {
 	KAFKA_TOPIC_SMS       string
 	KAFKA_CONSUMER_GROUP  string
 	SMS_WORKER_COUNT      int
+	DB_DSN                string
 }
 
 func ReadEnvs() Envs {
@@ -29,6 +30,7 @@ func ReadEnvs() Envs {
 	envs.KAFKA_BROKERS = os.Getenv("KAFKA_BROKERS")
 	envs.KAFKA_TOPIC_SMS = os.Getenv("KAFKA_TOPIC_SMS")
 	envs.KAFKA_CONSUMER_GROUP = os.Getenv("KAFKA_CONSUMER_GROUP")
+	envs.DB_DSN = os.Getenv("DB_DSN")
 
 	workerCount, convErr := strconv.Atoi(os.Getenv("SMS_WORKER_COUNT"))
 	if convErr != nil {

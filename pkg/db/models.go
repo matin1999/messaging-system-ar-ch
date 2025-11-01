@@ -22,8 +22,8 @@ const (
 
 type User struct {
 	gorm.Model
-	Name   string `gorm:"type:varchar(128);not null;default:''"`
-	APIKey string `gorm:"type:varchar(128);uniqueIndex;not null;default:''"`
+	Name     string `gorm:"type:varchar(128);not null;default:''"`
+	Password string `gorm:"type:varchar(128);uniqueIndex;not null;default:''"`
 }
 
 type Service struct {
@@ -32,8 +32,9 @@ type Service struct {
 	Type    ServiceType `gorm:"type:enum('express','indirect');not null"`
 	Status  string      `gorm:"type:varchar(16);not null;default:'active'"`
 	Credits int64       `gorm:"not null;default:0"`
-	User    User        `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
-	Sms     []Sms       `gorm:"foreignKey:ChannelDetectionId"`
+	UsedCredits int64       `gorm:"not null;default:0"`
+	User User  `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Sms  []Sms `gorm:"foreignKey:ChannelDetectionId"`
 }
 
 type Sms struct {
