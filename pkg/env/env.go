@@ -17,6 +17,8 @@ type Envs struct {
 	KAFKA_CONSUMER_GROUP  string
 	SMS_WORKER_COUNT      int
 	DB_DSN                string
+	COST_PER_CHAR_EXPRESS int
+	COST_PER_CHAR_ASYNC   int
 }
 
 func ReadEnvs() Envs {
@@ -37,8 +39,26 @@ func ReadEnvs() Envs {
 		log.Fatalf("Failed to parse worker count")
 		envs.SMS_WORKER_COUNT = 10
 
+	} else {
+		envs.SMS_WORKER_COUNT = workerCount
 	}
-	envs.SMS_WORKER_COUNT = workerCount
+
+	asyncCostperChar, convErr := strconv.Atoi(os.Getenv("COST_PER_CHAR_ASYNC"))
+	if convErr != nil {
+		log.Fatalf("Failed to parse COST_PER_CHAR_ASYNC")
+		envs.COST_PER_CHAR_ASYNC = 1
+
+	} else {
+		envs.COST_PER_CHAR_ASYNC = asyncCostperChar
+	}
+
+	expressCostPerChar, convErr := strconv.Atoi(os.Getenv("COST_PER_CHAR_EXPRESS"))
+	if convErr != nil {
+		log.Fatalf("Failed to parse COST_PER_CHAR_EXPRESS")
+		envs.SMS_WORKER_COUNT = 3
+	} else {
+		envs.COST_PER_CHAR_EXPRESS = expressCostPerChar
+	}
 
 	return envs
 }

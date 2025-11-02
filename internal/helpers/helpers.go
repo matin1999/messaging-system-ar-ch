@@ -4,8 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"postchi/pkg/db"
+	"postchi/pkg/env"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/gofiber/fiber/v2"
 )
@@ -28,4 +30,22 @@ func ToServiceType(s string) (db.ServiceType, error) {
 	default:
 		return "", errors.New("type must be 'express' or 'indirect'")
 	}
+}
+
+func calculateCost(envs *env.Envs, s string, serviceType string) int {
+	var costPerChar int
+	switch serviceType {
+	case "express":
+		costPerChar = envs.COST_PER_CHAR_EXPRESS
+
+	case "async":
+		costPerChar = envs.COST_PER_CHAR_ASYNC
+
+	}
+	charCount := utf8.RuneCountInString(s)
+	if charCount < 0 {
+		charCount = 0
+	}
+	total := charCount * costPerChar
+	return total
 }
