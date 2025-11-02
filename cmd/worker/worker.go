@@ -12,6 +12,7 @@ import (
 
 	"postchi/internal/metrics"
 	"postchi/internal/sms"
+	"postchi/pkg/db"
 	"postchi/pkg/env"
 	"postchi/pkg/kafka"
 	"postchi/pkg/logger"
@@ -22,10 +23,11 @@ type Worker struct {
 	Metrics     *metrics.Metrics
 	Logger      logger.LoggerInterface
 	KafkaClinet kafka.KafkaInterface
+	Db          db.DataBaseInterface
 }
 
-func WorkerHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics, k kafka.KafkaInterface) *Worker {
-	return &Worker{Envs: e, Logger: l, Metrics: m, KafkaClinet: k}
+func WorkerHandlerInit(l logger.LoggerInterface, e *env.Envs, m *metrics.Metrics, k kafka.KafkaInterface, d db.DataBaseInterface) *Worker {
+	return &Worker{Envs: e, Logger: l, Metrics: m, KafkaClinet: k, Db: d}
 }
 
 func (w *Worker) Start() {
@@ -105,6 +107,9 @@ func (w *Worker) workerLoop(jobs <-chan kafka.SmsKafkaMessage, wg *sync.WaitGrou
 			continue
 		}
 
+		if err := w.Db.MarkSmsSentAndSpendCredit(j.UserId, j.ServiceId, j.SmsId, 1, prov.GetName(), msgID); err != nil {
+			w.Logger.StdLog("error", "[worker] failed to update SMS and deduct credit: "+err.Error())
+		}
 		w.Logger.StdLog("info",
 			"[worker] sent OK to="+j.To+
 				" provider="+prov.GetName()+

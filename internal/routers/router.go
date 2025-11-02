@@ -20,6 +20,6 @@ func SetupRoutes(app *fiber.App, userH handlers.UserHandlerInterface, smsH handl
 	app.Post("account/:user_id/services/charge", userH.ChargeService)
 
 	app.Post("/sms/:user_id/:service_id/express/send", smsH.SendExpressSms)
-	app.Post("/sms/:user_id/:service_id/async/send", smsH.SensAsyncSms)
+	app.Post("/sms/:user_id/:service_id/async/send", smsH.SendAsyncSms)
 
 }

@@ -10,11 +10,12 @@ import (
 )
 
 type SmsKafkaMessage struct {
+	SmsId    uint `json:"to"`
 	To        string `json:"to"`
 	Content   string `json:"content"`
 	Provider  string `json:"provider"`
-	UserId    string    `json:"user_id"`
-	ServiceId string    `json:"service_id"`
+	UserId    uint    `json:"user_id"`
+	ServiceId uint    `json:"service_id"`
 }
 
 type KafkaInterface interface {

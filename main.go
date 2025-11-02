@@ -56,7 +56,7 @@ func main() {
 		panic("worker cannot run kafka not initialized with err " + err.Error())
 	}
 
-	worker := worker.WorkerHandlerInit(logger,&envs,metric,kafkaReaderClient)
+	worker := worker.WorkerHandlerInit(logger,&envs,metric,kafkaReaderClient,DbClient)
 
 	//running workers 
 
