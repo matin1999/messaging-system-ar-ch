@@ -7,8 +7,8 @@ import (
 type ServiceType string
 
 const (
-	ServiceTypeExpress  ServiceType = "express"
-	ServiceTypeAsync ServiceType = "async"
+	ServiceTypeExpress ServiceType = "express"
+	ServiceTypeAsync   ServiceType = "async"
 )
 
 type SmsStatus string
@@ -29,12 +29,12 @@ type User struct {
 
 type Service struct {
 	gorm.Model
-	UserID      uint        `gorm:"index;not null"`
-	Type        ServiceType `gorm:"type:enum('express','indirect');not null"`
-	Status      string      `gorm:"type:varchar(16);not null;default:'active'"`
-	Credits     uint64       `gorm:"not null;default:0"`
-	User        User        `gorm:"references:ID"`
-	Sms         []Sms       `gorm:"foreignKey:ServiceId"`
+	UserID  uint        `gorm:"index;not null"`
+	Type    ServiceType `gorm:"type:enum('express','indirect');not null"`
+	Status  string      `gorm:"type:varchar(16);not null;default:'active'"`
+	Credits uint64      `gorm:"not null;default:0"`
+	User    User        `gorm:"references:ID"`
+	Sms     []Sms       `gorm:"foreignKey:ServiceId"`
 }
 
 type Sms struct {
@@ -47,5 +47,6 @@ type Sms struct {
 	Cost                     uint    `gorm:"type:int;default:0;index:idx_service_status_cost;"`
 	ServiceProviderName      string  `gorm:"type:string;not null;"`
 	ServiceProviderMessageId int     `gorm:"type:int;not null;"`
+	ServiceId                uint    `gorm:"references:ID"`
 	Service                  Service `gorm:"references:ID"`
 }

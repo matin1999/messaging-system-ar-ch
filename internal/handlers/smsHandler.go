@@ -8,6 +8,7 @@ import (
 
 	"postchi/internal/handlers/requests"
 	"postchi/internal/handlers/responses"
+	"postchi/internal/helpers"
 	"postchi/internal/metrics"
 	"postchi/internal/sms"
 	"postchi/pkg/db"
@@ -92,6 +93,8 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to save message"})
 	}
 
+    calculatedCost := helpers.CalculateCost(h.Envs,req.Text,"express")
+
 	if h.Db != nil {
 		smsRecord := &db.Sms{
 			Content:                  req.Text,
@@ -99,10 +102,10 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 			Receptor:                 req.To,
 			Status:                   "sent",
 			SentTime:                 time.Now().Unix(),
-			Cost:                     0,
+			Cost:                     calculatedCost,
 			ServiceProviderName:      prov.GetName(),
 			ServiceProviderMessageId: msgID,
-			Service:                  *serviceObj,
+			ServiceId:                serviceObj.ID,
 		}
 		if err := h.Db.CreateSmsRecord(smsRecord); err != nil {
 			h.Logger.StdLog("error", fmt.Sprintf("[sms-express] failed to persist SMS record: %v", err))
@@ -153,6 +156,7 @@ func (h *SmsHandler) SensAsyncSms(c *fiber.Ctx) error {
 		h.Logger.StdLog("error", "kafka publish failed: "+err.Error())
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to save message"})
 	}
+    calculatedCost := helpers.CalculateCost(h.Envs,req.Text,"express")
 
 	smsRecord := &db.Sms{
 		Content:                  req.Text,
@@ -160,10 +164,10 @@ func (h *SmsHandler) SensAsyncSms(c *fiber.Ctx) error {
 		Receptor:                 req.To,
 		Status:                   "queued",
 		SentTime:                 time.Now().Unix(),
-		Cost:                     0,
+		Cost:                     calculatedCost,
 		ServiceProviderName:      req.Provider,
 		ServiceProviderMessageId: 0,
-		Service:                  *serviceObj,
+		ServiceId:                serviceObj.ID,
 	}
 	if err := h.Db.CreateSmsRecord(smsRecord); err != nil {
 		h.Logger.StdLog("error", fmt.Sprintf("[sms-async] failed to persist queued SMS record: %v", err))

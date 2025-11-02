@@ -32,7 +32,7 @@ func ToServiceType(s string) (db.ServiceType, error) {
 	}
 }
 
-func calculateCost(envs *env.Envs, s string, serviceType string) int {
+func CalculateCost(envs *env.Envs, s string, serviceType string) uint {
 	var costPerChar int
 	switch serviceType {
 	case "express":
@@ -47,5 +47,5 @@ func calculateCost(envs *env.Envs, s string, serviceType string) int {
 		charCount = 0
 	}
 	total := charCount * costPerChar
-	return total
+	return uint(total)
 }
