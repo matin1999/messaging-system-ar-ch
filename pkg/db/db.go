@@ -15,6 +15,9 @@ type DataBaseInterface interface {
 	GetUserServices(userID uint) ([]Service, error)
 	CreateUserService(userID uint, ServiceType ServiceType, intialCredit int) error
 	UpdateServiceCredit(userId uint, serviceId uint, creditAmount int) error
+    CreateSmsRecord(s *Sms) error
+    SpendServiceCredit(userId uint, serviceId uint, cost int) error
+    GetServiceSms(serviceId uint, offset int, limit int) ([]Sms, error)
 }
 
 type DataBaseWrapper struct {
@@ -85,4 +88,33 @@ func (d *DataBaseWrapper) UpdateServiceCredit(userId uint, serviceId uint, credi
 		return result.Error
 	}
 	return nil
+}
+
+func (d *DataBaseWrapper) CreateSmsRecord(s *Sms) error {
+    return d.DBConn.Create(s).Error
+}
+
+
+func (d *DataBaseWrapper) SpendServiceCredit(userId uint, serviceId uint, cost int) error {
+    result := d.DBConn.Model(&Service{}).
+        Where("id = ? AND user_id = ? AND credits >= ?", serviceId, userId, cost).
+        Update("credits", gorm.Expr("credits - ?", cost))
+    if result.Error != nil {
+        return result.Error
+    }
+    if result.RowsAffected == 0 {
+        return errors.New("insufficient credits or service not found")
+    }
+    return nil
+}
+
+func (d *DataBaseWrapper) GetServiceSms(serviceId uint, offset int, limit int) ([]Sms, error) {
+    var messages []Sms
+    result := d.DBConn.
+        Where("service_id = ?", serviceId).
+        Order("created_at DESC").
+        Offset(offset).
+        Limit(limit).
+        Find(&messages)
+    return messages, result.Error
 }
