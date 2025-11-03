@@ -28,7 +28,7 @@ services:
     command: >
       "
       /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
-      --create --if-not-exists --topic ${KAFKA_TOPIC_SMS:=sms_send} --partitions 1 --replication-factor 1;
+      --create --if-not-exists --topic ${KAFKA_TOPIC_SMS} --partitions 6 --replication-factor 1;
       echo 'kafka topics ensured';
       "
 
