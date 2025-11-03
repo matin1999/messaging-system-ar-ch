@@ -132,7 +132,6 @@ func (d *DataBaseWrapper) CreateSmsAndSpendCredit(userId uint, serviceId uint, s
 func (d *DataBaseWrapper) MarkSmsSent(userId uint, serviceId uint, smsId uint, providerName string, providerMsgID int) error {
 	now := time.Now().Unix()
 	update := map[string]interface{}{
-		"sms_status":                  "sent",
 		"status":                      "sent",
 		"service_provider_message_id": providerMsgID,
 		"sent_time":                   now,

@@ -4,17 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os/signal"
-	"strconv"
-	"sync"
-	"syscall"
-	"time"
 	"postchi/internal/metrics"
 	"postchi/internal/sms"
 	"postchi/pkg/db"
 	"postchi/pkg/env"
 	"postchi/pkg/kafka"
 	"postchi/pkg/logger"
+	"strconv"
+	"sync"
+	"syscall"
+	"time"
 )
 
 type Worker struct {
@@ -103,6 +104,14 @@ func (w *Worker) workerLoop(jobs <-chan kafka.SmsKafkaMessage, wg *sync.WaitGrou
 
 		if sendErr != nil {
 			w.Logger.StdLog("error", "[worker] send failed: "+sendErr.Error())
+			ctx := context.Background()
+			kafkaValue, parseErr := json.Marshal(j)
+			if parseErr != nil {
+				w.Logger.StdLog("error", fmt.Sprintf("[sms-async] retry kafka message parser erro %s", parseErr))
+			}
+			if err := w.KafkaClinet.Publish(ctx, j.Provider, kafkaValue); err != nil {
+				w.Logger.StdLog("error", "kafka publish failed: "+err.Error())
+			}
 			continue
 		}
 		if err := w.Db.MarkSmsSent(j.UserId, j.ServiceId, j.SmsId, prov.GetName(), msgID); err != nil {
