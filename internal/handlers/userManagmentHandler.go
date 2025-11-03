@@ -204,7 +204,6 @@ func (h *UserManagementHandler) GetServiceMessages(c *fiber.Ctx) error {
 		resp = append(resp, fiber.Map{
 			"id":         m.ID,
 			"content":    m.Content,
-			"sms_status": m.SmsStatus,
 			"status":     m.Status,
 			"receptor":   m.Receptor,
 			"sent_time":  m.SentTime,

@@ -40,7 +40,6 @@ type Service struct {
 type Sms struct {
 	gorm.Model
 	Content                  string  `gorm:"type:string;not null;"`
-	SmsStatus                string  `gorm:"type:string;size:255;not null;"`
 	Receptor                 string  `gorm:"type:string;not null;"`
 	Status                   string  `gorm:"type:string;not null;"`
 	SentTime                 int64   `gorm:"type:int;not null;"`

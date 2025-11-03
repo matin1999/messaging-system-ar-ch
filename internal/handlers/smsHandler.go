@@ -89,30 +89,26 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 			"message": "send failed",
 		})
 	}
-    cost:= helpers.CalculateCost(h.Envs,req.Text,"express")
+	cost := helpers.CalculateCost(h.Envs, req.Text, "express")
 
-	if h.Db != nil && uid64 != 0 && sid64 != 0 {
-		smsRecord := &db.Sms{
-			Content:                  req.Text,
-			SmsStatus:                "sent",
-			Receptor:                 req.To,
-			Status:                   "sent",
-			SentTime:                 time.Now().Unix(),
-			Cost:                     cost,
-			ServiceProviderName:      prov.GetName(),
-			ServiceProviderMessageId: msgID,
-			ServiceId:                uint(sid64),
-		}
-		if err := h.Db.CreateSmsAndSpendCredit(uint(uid64), uint(sid64), smsRecord, 1); err != nil {
-			// If credit is insufficient or other db error occurs, log and return
-			h.Logger.StdLog("error", fmt.Sprintf("[sms-express] failed to persist SMS or deduct credit: %v", err))
-			// If the error indicates lack of credits, use 402, otherwise 500
-			if err.Error() == "insufficient credits or service not found" {
-				return c.Status(fiber.StatusPaymentRequired).JSON(fiber.Map{"error": "insufficient credits"})
-			}
-			return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "db error"})
-		}
+	smsRecord := &db.Sms{
+		Content:                  req.Text,
+		Receptor:                 req.To,
+		Status:                   "sent",
+		SentTime:                 time.Now().Unix(),
+		Cost:                     cost,
+		ServiceProviderName:      prov.GetName(),
+		ServiceProviderMessageId: msgID,
+		ServiceId:                uint(sid64),
 	}
+	if err := h.Db.CreateSmsAndSpendCredit(uint(uid64), uint(sid64), smsRecord, 1); err != nil {
+		h.Logger.StdLog("error", fmt.Sprintf("[sms-express] failed to persist SMS or deduct credit: %v", err))
+		if err.Error() == "insufficient credits" {
+			return c.Status(fiber.StatusPaymentRequired).JSON(fiber.Map{"error": "insufficient credits"})
+		}
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "db error"})
+	}
+
 	return c.Status(fiber.StatusAccepted).JSON(fiber.Map{
 		"Status": "ok",
 	})
@@ -136,6 +132,8 @@ func (h *SmsHandler) SendAsyncSms(c *fiber.Ctx) error {
 
 	var err error
 
+	cost := uint(helpers.CalculateCost(h.Envs, req.Text, "async"))
+
 	serviceId, err = strconv.Atoi(serviceIdParam)
 	if err != nil {
 		c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid service id param "})
@@ -147,7 +145,6 @@ func (h *SmsHandler) SendAsyncSms(c *fiber.Ctx) error {
 
 	smsRecord := &db.Sms{
 		Content:                  req.Text,
-		SmsStatus:                "queued",
 		Receptor:                 req.To,
 		Status:                   "queued",
 		SentTime:                 time.Now().Unix(),
@@ -156,7 +153,7 @@ func (h *SmsHandler) SendAsyncSms(c *fiber.Ctx) error {
 		ServiceProviderMessageId: 0,
 		ServiceId:                uint(serviceId),
 	}
-	if err := h.Db.CreateSmsRecord(smsRecord); err != nil {
+	if err := h.Db.CreateSmsAndSpendCredit(uint(userId), uint(serviceId), smsRecord, cost); err != nil {
 		h.Logger.StdLog("error", fmt.Sprintf("[sms-async] failed to persist queued SMS record: %v", err))
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "db error"})
 	}
@@ -168,7 +165,7 @@ func (h *SmsHandler) SendAsyncSms(c *fiber.Ctx) error {
 		Provider:  req.Provider,
 		UserId:    uint(userId),
 		ServiceId: uint(serviceId),
-		SmsId:  smsRecordId,
+		SmsId:     smsRecordId,
 	}
 	kafkaValue, parseErr := json.Marshal(msgWithId)
 	if parseErr != nil {
