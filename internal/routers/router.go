@@ -13,12 +13,11 @@ func SetupRoutes(app *fiber.App, userH handlers.UserHandlerInterface, smsH handl
 		return err
 	})
 
-	app.Get("account/createuser", userH.CreateUser)
-
-	app.Get("account/:user_id/services/status", userH.GetUserServiceStatus)
-	app.Get("account/:user_id/services/create", userH.CreateServiceForUser)
-	app.Post("account/:user_id/services/charge", userH.ChargeService)
-	app.Get("account/:user_id/services/:service_id/messages", userH.GetServiceMessages)
+	app.Get("/account/createuser", userH.CreateUser)
+	app.Get("/account/:user_id/services/status", userH.GetUserServiceStatus)
+	app.Get("/account/:user_id/services/create", userH.CreateServiceForUser)
+	app.Post("/account/:user_id/services/charge", userH.ChargeService)
+	app.Get("/account/:user_id/services/:service_id/messages", userH.GetServiceMessages)
 
 	app.Post("/sms/:user_id/:service_id/express/send", smsH.SendExpressSms)
 	app.Post("/sms/:user_id/:service_id/async/send", smsH.SendAsyncSms)

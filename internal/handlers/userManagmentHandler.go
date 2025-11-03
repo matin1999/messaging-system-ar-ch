@@ -4,13 +4,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gofiber/fiber/v2"
 	"postchi/internal/handlers/requests"
 	"postchi/internal/helpers"
 	"postchi/internal/metrics"
 	"postchi/pkg/db"
 	"postchi/pkg/env"
 	"postchi/pkg/logger"
+
+	"github.com/gofiber/fiber/v2"
 )
 
 type UserManagementHandler struct {
@@ -26,8 +27,8 @@ type UserHandlerInterface interface {
 	ChargeService(c *fiber.Ctx) error
 	GetUserServiceStatus(c *fiber.Ctx) error
 
-    // GetServiceMessages returns a paginated list of SMS messages for a user’s service.
-    GetServiceMessages(c *fiber.Ctx) error
+	// GetServiceMessages returns a paginated list of SMS messages for a user’s service.
+	GetServiceMessages(c *fiber.Ctx) error
 }
 
 func UserHandlerInit(l logger.LoggerInterface, envs *env.Envs, m *metrics.Metrics, db db.DataBaseInterface) UserHandlerInterface {
@@ -63,7 +64,7 @@ func (h *UserManagementHandler) CreateUser(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to create user"})
 	}
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
-		"user_id": u.ID, "name": u.Name, "created": true,
+		"created": true,
 	})
 }
 
@@ -122,9 +123,8 @@ func (h *UserManagementHandler) ChargeService(c *fiber.Ctx) error {
 		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "failed to update credits"})
 	}
 
-	
 	return c.Status(fiber.StatusOK).JSON(fiber.Map{
-		"message":    "charged",
+		"message": "charged",
 	})
 }
 
@@ -162,63 +162,63 @@ func (h *UserManagementHandler) GetUserServiceStatus(c *fiber.Ctx) error {
 // size=10. The response includes the message records sorted by creation time
 // descending.
 func (h *UserManagementHandler) GetServiceMessages(c *fiber.Ctx) error {
-    // parse user and service IDs
-    userID, err := helpers.ParseUintParam(c, "user_id")
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
-    }
-    serviceIDRaw := c.Params("service_id")
-    serviceID64, err := strconv.ParseUint(serviceIDRaw, 10, 64)
-    if err != nil {
-        return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid service_id"})
-    }
-    serviceID := uint(serviceID64)
+	// parse user and service IDs
+	userID, err := helpers.ParseUintParam(c, "user_id")
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": err.Error()})
+	}
+	serviceIDRaw := c.Params("service_id")
+	serviceID64, err := strconv.ParseUint(serviceIDRaw, 10, 64)
+	if err != nil {
+		return c.Status(fiber.StatusBadRequest).JSON(fiber.Map{"error": "invalid service_id"})
+	}
+	serviceID := uint(serviceID64)
 
-    // parse pagination parameters
-    pageStr := c.Query("page", "1")
-    sizeStr := c.Query("size", "10")
-    page, err := strconv.Atoi(pageStr)
-    if err != nil || page < 1 {
-        page = 1
-    }
-    size, err := strconv.Atoi(sizeStr)
-    if err != nil || size < 1 {
-        size = 10
-    }
-    // cap the size to a reasonable limit to prevent abuse
-    if size > 100 {
-        size = 100
-    }
-    offset := (page - 1) * size
+	// parse pagination parameters
+	pageStr := c.Query("page", "1")
+	sizeStr := c.Query("size", "10")
+	page, err := strconv.Atoi(pageStr)
+	if err != nil || page < 1 {
+		page = 1
+	}
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil || size < 1 {
+		size = 10
+	}
+	// cap the size to a reasonable limit to prevent abuse
+	if size > 100 {
+		size = 100
+	}
+	offset := (page - 1) * size
 
-    // fetch messages from database
-    messages, err := h.Db.GetServiceSms(serviceID, offset, size)
-    if err != nil {
-        h.Logger.StdLog("error", "GetServiceMessages: "+err.Error())
-        return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "db error"})
-    }
+	// fetch messages from database
+	messages, err := h.Db.GetServiceSms(serviceID, offset, size)
+	if err != nil {
+		h.Logger.StdLog("error", "GetServiceMessages: "+err.Error())
+		return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{"error": "db error"})
+	}
 
-    // build response list
-    resp := make([]fiber.Map, 0, len(messages))
-    for _, m := range messages {
-        resp = append(resp, fiber.Map{
-            "id":         m.ID,
-            "content":    m.Content,
-            "sms_status": m.SmsStatus,
-            "status":     m.Status,
-            "receptor":   m.Receptor,
-            "sent_time":  m.SentTime,
-            "cost":       m.Cost,
-            "provider":   m.ServiceProviderName,
-            "message_id": m.ServiceProviderMessageId,
-        })
-    }
+	// build response list
+	resp := make([]fiber.Map, 0, len(messages))
+	for _, m := range messages {
+		resp = append(resp, fiber.Map{
+			"id":         m.ID,
+			"content":    m.Content,
+			"sms_status": m.SmsStatus,
+			"status":     m.Status,
+			"receptor":   m.Receptor,
+			"sent_time":  m.SentTime,
+			"cost":       m.Cost,
+			"provider":   m.ServiceProviderName,
+			"message_id": m.ServiceProviderMessageId,
+		})
+	}
 
-    return c.JSON(fiber.Map{
-        "user_id":    userID,
-        "service_id": serviceID,
-        "page":       page,
-        "size":       size,
-        "messages":   resp,
-    })
+	return c.JSON(fiber.Map{
+		"user_id":    userID,
+		"service_id": serviceID,
+		"page":       page,
+		"size":       size,
+		"messages":   resp,
+	})
 }

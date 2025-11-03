@@ -19,7 +19,7 @@ type DataBaseInterface interface {
     SpendServiceCredit(userId uint, serviceId uint, cost int) error
     GetServiceSms(serviceId uint, offset int, limit int) ([]Sms, error)
     CreateSmsAndSpendCredit(userId uint, serviceId uint, sms *Sms, cost int) error
-    MarkSmsSentAndSpendCredit(userId uint, serviceId uint, smsId uint, cost int, providerName string, providerMsgID int) error
+    MarkSmsSentAndSpendCredit(userId uint, serviceId uint, smsId uint, cost uint, providerName string, providerMsgID int) error
 }
 
 type DataBaseWrapper struct {
@@ -130,7 +130,7 @@ func (d *DataBaseWrapper) CreateSmsAndSpendCredit(userId uint, serviceId uint, s
     })
 }
 
-func (d *DataBaseWrapper) MarkSmsSentAndSpendCredit(userId uint, serviceId uint, smsId uint, cost int, providerName string, providerMsgID int) error {
+func (d *DataBaseWrapper) MarkSmsSentAndSpendCredit(userId uint, serviceId uint, smsId uint, cost uint, providerName string, providerMsgID int) error {
     return d.DBConn.Transaction(func(tx *gorm.DB) error {
         result := tx.Model(&Service{}).
             Where("id = ? AND user_id = ? AND credits >= ?", serviceId, userId, cost).

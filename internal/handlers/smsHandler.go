@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"postchi/internal/handlers/requests"
+	"postchi/internal/helpers"
 	"postchi/internal/metrics"
 	"postchi/internal/sms"
 	"postchi/pkg/db"
@@ -88,6 +89,7 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 			"message": "send failed",
 		})
 	}
+    cost:= helpers.CalculateCost(h.Envs,req.Text,"express")
 
 	if h.Db != nil && uid64 != 0 && sid64 != 0 {
 		smsRecord := &db.Sms{
@@ -96,7 +98,7 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 			Receptor:                 req.To,
 			Status:                   "sent",
 			SentTime:                 time.Now().Unix(),
-			Cost:                     1,
+			Cost:                     cost,
 			ServiceProviderName:      prov.GetName(),
 			ServiceProviderMessageId: msgID,
 			ServiceId:                uint(sid64),

@@ -10,6 +10,7 @@ import (
 	"syscall"
 	"time"
 
+	"postchi/internal/helpers"
 	"postchi/internal/metrics"
 	"postchi/internal/sms"
 	"postchi/pkg/db"
@@ -106,8 +107,9 @@ func (w *Worker) workerLoop(jobs <-chan kafka.SmsKafkaMessage, wg *sync.WaitGrou
 			w.Logger.StdLog("error", "[worker] send failed: "+sendErr.Error())
 			continue
 		}
+		cost := helpers.CalculateCost(w.Envs, j.Content, "express")
 
-		if err := w.Db.MarkSmsSentAndSpendCredit(j.UserId, j.ServiceId, j.SmsId, 1, prov.GetName(), msgID); err != nil {
+		if err := w.Db.MarkSmsSentAndSpendCredit(j.UserId, j.ServiceId, j.SmsId, cost, prov.GetName(), msgID); err != nil {
 			w.Logger.StdLog("error", "[worker] failed to update SMS and deduct credit: "+err.Error())
 		}
 		w.Logger.StdLog("info",

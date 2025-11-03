@@ -1,7 +1,6 @@
 package env
 
 import (
-	"log"
 	"os"
 	"strconv"
 )
@@ -36,29 +35,21 @@ func ReadEnvs() Envs {
 
 	workerCount, convErr := strconv.Atoi(os.Getenv("SMS_WORKER_COUNT"))
 	if convErr != nil {
-		log.Fatalf("Failed to parse worker count")
-		envs.SMS_WORKER_COUNT = 10
-
-	} else {
-		envs.SMS_WORKER_COUNT = workerCount
+		panic("Failed to parse worker count")
 	}
+	envs.SMS_WORKER_COUNT = workerCount
 
 	asyncCostperChar, convErr := strconv.Atoi(os.Getenv("COST_PER_CHAR_ASYNC"))
 	if convErr != nil {
-		log.Fatalf("Failed to parse COST_PER_CHAR_ASYNC")
-		envs.COST_PER_CHAR_ASYNC = 1
-
-	} else {
-		envs.COST_PER_CHAR_ASYNC = asyncCostperChar
+		panic("Failed to parse COST_PER_CHAR_ASYNC")
 	}
+	envs.COST_PER_CHAR_ASYNC = asyncCostperChar
 
 	expressCostPerChar, convErr := strconv.Atoi(os.Getenv("COST_PER_CHAR_EXPRESS"))
 	if convErr != nil {
-		log.Fatalf("Failed to parse COST_PER_CHAR_EXPRESS")
-		envs.SMS_WORKER_COUNT = 3
-	} else {
-		envs.COST_PER_CHAR_EXPRESS = expressCostPerChar
+		panic("Failed to parse COST_PER_CHAR_EXPRESS")
 	}
+	envs.COST_PER_CHAR_EXPRESS = expressCostPerChar
 
 	return envs
 }
