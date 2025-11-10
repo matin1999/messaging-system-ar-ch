@@ -14,7 +14,7 @@ RUN apk add --no-cache ca-certificates tzdata
 
 COPY --from=build /app/main /app/main
 
-EXPOSE 8082
+EXPOSE 8282
 EXPOSE 8181
 
 ENTRYPOINT ["/app/main"]

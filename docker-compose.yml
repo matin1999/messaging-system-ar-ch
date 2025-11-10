@@ -4,10 +4,8 @@ services:
   mysql:
     image: mysql:8.4
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_DATABASE: postchi
     ports:
       - "3306:3306"
     volumes:
@@ -51,6 +49,9 @@ services:
       - mysql
       - kafka-init
     restart: unless-stopped
+    ports:
+    - "8282:8282"
+    - "8181:8181"
 
 volumes:
   mysql_data:
