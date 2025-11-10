@@ -14,20 +14,20 @@ services:
       - mysql_data:/var/lib/mysql
 
   kafka:
-    image: bitnami/kafka:3.7
+    image: apache/kafka:latest
     ports:
       - "9092:9092"
     volumes:
-      - kafka_data:/bitnami/kafka
+      - kafka_data:/apache/kafka
 
   kafka-init:
-    image: bitnami/kafka:3.7
+    image: apache/kafka:latest
     depends_on:
       - kafka
     entrypoint: ["/bin/bash", "-lc"]
     command: >
       "
-      /opt/bitnami/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
+      /opt/apache/kafka/bin/kafka-topics.sh --bootstrap-server kafka:9092
       --create --if-not-exists --topic ${KAFKA_TOPIC_SMS} --partitions 6 --replication-factor 1;
       echo 'kafka topics ensured';
       "
