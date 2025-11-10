@@ -1,6 +1,8 @@
 package kavenegar
 
 import (
+	"context"
+
 	"github.com/kavenegar/kavenegar-go"
 )
 
@@ -9,7 +11,7 @@ type SmsProvider struct {
 	FromNumber string
 }
 
-func (p *SmsProvider) SendSMS(to string, message string) (int, int, error) {
+func (p *SmsProvider) SendSMS(ctx context.Context, to string, message string) (int, int, error) {
 	api := kavenegar.New(p.ApiKey)
 	if res, err := api.Message.Send(p.FromNumber, []string{to}, message, nil); err != nil {
 		return 0, 0, err

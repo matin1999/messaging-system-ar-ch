@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -70,7 +71,10 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 	smsSerrvice := sms.NewService(prov)
 
 	start := time.Now()
-	status, msgID, sendErr := smsSerrvice.Send(req.To, req.Text)
+
+	ctx, cancel := context.WithTimeout(c.Context(), time.Second * req.Ttl)
+	defer cancel()
+	status, msgID, sendErr := smsSerrvice.Send(ctx,req.To, req.Text)
 
 	elapsed := time.Since(start).Seconds()
 	if h.Metrics != nil {
