@@ -99,7 +99,8 @@ func (w *Worker) workerLoop(jobs <-chan kafka.SmsKafkaMessage, wg *sync.WaitGrou
 		svc := sms.NewService(prov)
 
 		start := time.Now()
-		status, msgID, sendErr := svc.Send(j.To, j.Content)
+
+		status, msgID, sendErr := svc.Send(context.Background(), j.To, j.Content)
 		elapsed := time.Since(start)
 
 		if sendErr != nil {

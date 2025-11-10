@@ -72,7 +72,7 @@ func (h *SmsHandler) SendExpressSms(c *fiber.Ctx) error {
 
 	start := time.Now()
 
-	ctx, cancel := context.WithTimeout(c.Context(), time.Second * req.Ttl)
+	ctx, cancel := context.WithTimeout(c.Context(), time.Second * time.Duration(req.Ttl))
 	defer cancel()
 	status, msgID, sendErr := smsSerrvice.Send(ctx,req.To, req.Text)
 
